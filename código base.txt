@@ -1,0 +1,73 @@
+import json
+from django.http import JsonResponse
+from django.views import View
+from django.urls import path
+
+# 1) Cálculo do valor da variável SOMA
+class CalcularSomaView(View):
+    def get(self, request):
+        indice = 13
+        soma = 0
+        k = 0
+        while k < indice:
+            k += 1
+            soma += k
+        return JsonResponse({'soma': soma})
+
+# 2) Verificar se um número pertence à sequência de Fibonacci
+def is_fibonacci(n):
+    a, b = 0, 1
+    while b < n:
+        a, b = b, a + b
+    return b == n or n == 0
+
+class VerificarFibonacciView(View):
+    def get(self, request, numero):
+        pertence = is_fibonacci(numero)
+        return JsonResponse({'numero': numero, 'pertence_fibonacci': pertence})
+
+# 3) Análise de faturamento diário
+class AnalisarFaturamentoView(View):
+    def get(self, request):
+        with open('faturamento.json', 'r') as file:
+            dados = json.load(file)
+        
+        faturamentos = [d['valor'] for d in dados if d['valor'] > 0]
+        media = sum(faturamentos) / len(faturamentos)
+        dias_acima_media = sum(1 for v in faturamentos if v > media)
+        
+        return JsonResponse({
+            'menor_faturamento': min(faturamentos),
+            'maior_faturamento': max(faturamentos),
+            'dias_acima_media': dias_acima_media
+        })
+
+# 4) Percentual de representação por estado
+class CalcularPercentualView(View):
+    def get(self, request):
+        faturamento_estados = {
+            'SP': 67836.43,
+            'RJ': 36678.66,
+            'MG': 29229.88,
+            'ES': 27165.48,
+            'Outros': 19849.53
+        }
+        total = sum(faturamento_estados.values())
+        percentual = {estado: (valor / total) * 100 for estado, valor in faturamento_estados.items()}
+        
+        return JsonResponse(percentual)
+
+# 5) Inverter string sem usar funções prontas
+class InverterStringView(View):
+    def get(self, request, texto):
+        invertida = "".join(texto[i] for i in range(len(texto) - 1, -1, -1))
+        return JsonResponse({'original': texto, 'invertida': invertida})
+
+# URLs
+urlpatterns = [
+    path('calcular_soma/', CalcularSomaView.as_view(), name='calcular_soma'),
+    path('verificar_fibonacci/<int:numero>/', VerificarFibonacciView.as_view(), name='verificar_fibonacci'),
+    path('analisar_faturamento/', AnalisarFaturamentoView.as_view(), name='analisar_faturamento'),
+    path('calcular_percentual/', CalcularPercentualView.as_view(), name='calcular_percentual'),
+    path('inverter_string/<str:texto>/', InverterStringView.as_view(), name='inverter_string'),
+]
